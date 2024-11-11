@@ -129,3 +129,25 @@ export async function decryptWithSymmetricKey(symmetricKey: CryptoKey, data: str
   return decoder.decode(decryptedData);
 }
 
+export async function storeSymmetricKey(symmetricKey: CryptoKey): Promise<void> {
+  const symmetricKeyBuffer: ArrayBuffer = await crypto.subtle.exportKey("raw", symmetricKey);
+  const base64Key: string = btoa(String.fromCharCode(...new Uint8Array(symmetricKeyBuffer)));
+  localStorage.setItem('symmetricKey', base64Key);
+}
+
+export async function retrieveSymmetricKey(): Promise<CryptoKey> {
+  const base64Key: string = localStorage.getItem('symmetricKey');
+  const binaryStr: string = atob(base64Key);
+  const keyData: Uint8Array = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) {
+    keyData[i] = binaryStr.charCodeAt(i);
+  }
+  return crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"]
+  );
+}
+

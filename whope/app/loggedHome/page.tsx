@@ -1,9 +1,10 @@
 "use client"
 
-import { Container, Box, Button, TextField, Typography } from '@mui/material';
-import { useState, useRef, RefObject, SetStateAction, Dispatch } from 'react';
+// import { Container, Box, Button, TextField, Typography } from '@mui/material';
+import { Button } from '@mui/material';
+// import { useState, useRef, RefObject, SetStateAction, Dispatch } from 'react';
 import { useRouter } from 'next/navigation';
-import { deriveSymmetricKey, encryptWithSymmetricKey, importPublicKey, encryptWithPublicKey, decryptWithSymmetricKey } from '../utils/crypto_utils';
+// import { deriveSymmetricKey, encryptWithSymmetricKey, importPublicKey, encryptWithPublicKey, decryptWithSymmetricKey } from '../utils/crypto_utils';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 export default function Home() {
@@ -11,7 +12,7 @@ export default function Home() {
   const router: AppRouterInstance = useRouter();
 
   const handleChat: () => void = () => {
-    router.push('/chat');
+    router.push('/');
   }
 
   const chatButton: () => JSX.Element = () => {

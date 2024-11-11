@@ -3,7 +3,7 @@
 import { Container, Box, Button, TextField, Typography } from '@mui/material';
 import { useState, useEffect, SetStateAction, Dispatch } from 'react';
 import { useRouter } from 'next/navigation';
-import { deriveSymmetricKey, encryptWithSymmetricKey, importPublicKey, encryptWithPublicKey, decryptWithSymmetricKey } from '../utils/crypto_utils';
+import { deriveSymmetricKey, encryptWithSymmetricKey, importPublicKey, encryptWithPublicKey, decryptWithSymmetricKey, storeSymmetricKey } from '../utils/crypto_utils';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 export default function Login() {
@@ -37,10 +37,7 @@ export default function Login() {
     const encryptedToken: string = data.tokens.access;
     const token: string = await decryptWithSymmetricKey(symmetricKey, encryptedToken);
     localStorage.setItem('token', token);
-    // store symmetric key in local localStorage
-    const symmetricKeyValue: JsonWebKey = await window.crypto.subtle.exportKey('jwk', symmetricKey);
-    const symmetricKeyValueString: string = JSON.stringify(symmetricKeyValue);
-    localStorage.setItem('symmetricKey', symmetricKeyValueString);
+    await storeSymmetricKey(symmetricKey);
     router.push('/loggedHome');
   };
 
