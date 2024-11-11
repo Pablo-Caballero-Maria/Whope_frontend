@@ -18,6 +18,10 @@ export default function Register() {
     ws.onopen = () => {
       setWebsocket(ws);
     };
+
+    return () => {
+      ws.close();
+    };
   }, []);
 
   const handleRegister: () => Promise<void> = async () => {
@@ -27,7 +31,6 @@ export default function Register() {
     const isWorkerCap: string = isWorker.charAt(0).toUpperCase() + isWorker.slice(1);
     websocket.send(JSON.stringify({ username: encrypted_username, password: encrypted_password, is_worker: isWorkerCap }));
     router.push('/');
-    websocket.close();
   };
 
   const switchComponent: () => JSX.Element = () => {

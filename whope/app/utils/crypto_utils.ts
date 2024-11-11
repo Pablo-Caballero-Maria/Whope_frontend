@@ -33,8 +33,6 @@ export async function encryptWithSymmetricKey(key: CryptoKey, data: string): Pro
   // this function is to encrypt using the symmetric key
   // unique initialization vector so that the same data encrypted with the same key will have different
   // encrypted representations (the IV cannot be encrypted because it is needed to decrypt the data itself)
-  console.log(key);
-  console.log(data);
   const iv: Uint8Array = crypto.getRandomValues(new Uint8Array(16));
   iv.fill(0);
   const encoder: TextEncoder = new TextEncoder();
@@ -102,7 +100,6 @@ export async function decryptWithSymmetricKey(symmetricKey: CryptoKey, data: str
   const decoder: TextDecoder = new TextDecoder();
   const binaryStr: string = atob(data);
   const combined: Uint8Array = new Uint8Array(binaryStr.length);
-
   // Convertir el string a un ArrayBuffer (manejando cada caracter del string)
   for (let i = 0; i < binaryStr.length; i++) {
     combined[i] = binaryStr.charCodeAt(i);
