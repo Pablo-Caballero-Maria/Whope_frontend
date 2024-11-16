@@ -1,4 +1,4 @@
-# Whope_frontend
+# Whope
 
 Whope is the Sioux goddess of peace, harmony, and friendship.
 
