@@ -3,7 +3,7 @@
 import { Container, Box, Button, TextField, Typography } from '@mui/material';
 import { useState, useEffect, SetStateAction, Dispatch } from 'react';
 import { useRouter } from 'next/navigation';
-import { deriveSymmetricKey, encryptWithSymmetricKey, importPublicKey, encryptWithPublicKey, decryptWithSymmetricKey, storeSymmetricKey } from '../utils/crypto_utils';
+import { deriveSymmetricKey, encryptWithSymmetricKey, importKey, encryptWithPublicKey, decryptWithSymmetricKey, storeKey } from '../utils/crypto_utils';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 export default function Login() {
@@ -11,7 +11,6 @@ export default function Login() {
   const [password, setPassword]: [string, Dispatch<SetStateAction<string>>] = useState('');
   const [webSocket, setWebsocket]: [WebSocket, Dispatch<SetStateAction<WebSocket>>] = useState(null);
   const [serverPublicKey, setServerPublicKey]: [CryptoKey, Dispatch<SetStateAction<CryptoKey>>] = useState(null);
-  const [symmetricKey, setSymmetricKey]: [CryptoKey, Dispatch<SetStateAction<CryptoKey>>] = useState(null);
   const router: AppRouterInstance = useRouter();
 
   useEffect(() => {
@@ -22,8 +21,10 @@ export default function Login() {
 
     webSocket.onmessage = async (event: MessageEvent) => {
       const data: { public_key: string } = JSON.parse(event.data);
-      const serverPublicKey: CryptoKey = await importPublicKey(data.public_key);
+      const serverPublicKey: CryptoKey = await importKey(data.public_key, "spki");
+      // no need to encrypt the server public key because its public
       setServerPublicKey(serverPublicKey);
+      await storeKey(serverPublicKey, 'serverPublicKey', 'spki');
     }
 
     return () => {
@@ -35,24 +36,27 @@ export default function Login() {
     const data: { tokens: { refresh: string, access: string } } = JSON.parse(event.data);
 
     const encryptedToken: string = data.tokens.access;
-    const token: string = await decryptWithSymmetricKey(symmetricKey, encryptedToken);
-    localStorage.setItem('token', token);
-    await storeSymmetricKey(symmetricKey);
+    localStorage.setItem('encrypted_token', encryptedToken);
     router.push('/loggedHome');
   };
 
   const handleLogin: () => Promise<void> = async () => {
+
     const symmetricKey: CryptoKey = await deriveSymmetricKey(password);
-    setSymmetricKey(symmetricKey);
+    // no need to store the symmetric key encripted with itself
+    await storeKey(symmetricKey, 'symmetricKey', 'raw');
 
     const encryptedSymmetricKey: string = await encryptWithPublicKey(serverPublicKey, symmetricKey);
     const encryptedUsername: string = await encryptWithSymmetricKey(symmetricKey, username);
     const encryptedPassword: string = await encryptWithSymmetricKey(symmetricKey, password);
 
+    // to send it along his messages without having to re-encrypt it every time he sends a message
+    localStorage.setItem('encrypted_username', encryptedUsername);
+
     webSocket.send(JSON.stringify({
-      username: encryptedUsername,
-      password: encryptedPassword,
-      symmetric_key: encryptedSymmetricKey,
+      encrypted_username: encryptedUsername,
+      encrypted_password: encryptedPassword,
+      encrypted_symmetric_key: encryptedSymmetricKey,
     }));
 
     // overwrite onmessage to handle the second message (the tokens)

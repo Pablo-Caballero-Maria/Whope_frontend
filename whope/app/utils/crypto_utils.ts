@@ -10,11 +10,13 @@ export async function deriveSymmetricKey(password: string): Promise<CryptoKey> {
   );
 
   const salt: Uint8Array = encoder.encode(password);
-  // symmetric key derived from password
+  // symmetric key derived from password. we cannot use a random salt because, on login, when we send the symmetric key derived from the password,
+  // if the salt generated to encrypt the user data on db was random, i would need to ask for it to the server. but in order to do so,
+  // id need to send the user data encrypted with a symmetric key that would have a different salt and therefore it wouldnt match with whats on the db
   const symmetricKey: CryptoKey = await crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      // unique but deterministic salt (in the future if we wanna decrypt info we will need just the password
+      // (in the future if we wanna decrypt info we will need just the password
       // and the salt to derive the same key)
       salt: salt,
       iterations: 100,
@@ -54,7 +56,7 @@ export async function encryptWithSymmetricKey(key: CryptoKey, data: string): Pro
 }
 
 // Convierte la clave pública PEM en un formato que pueda ser usado en la API Web Crypto
-export async function importPublicKey(base64Key: string): Promise<CryptoKey> {
+export async function importKey(base64Key: string, formatStr: string): Promise<CryptoKey> {
 
   // Decodificamos el Base64 a binario
   const binaryDer: string = atob(base64Key);
@@ -66,15 +68,19 @@ export async function importPublicKey(base64Key: string): Promise<CryptoKey> {
     view[i] = binaryDer.charCodeAt(i);
   }
 
+  const format: "spki" | "pkcs8" | "raw" = formatStr as "spki" | "pkcs8" | "raw";
+
+  // spki is for public keys, raw is for symmetric keys
+  let algorithm: RsaHashedImportParams | AesKeyAlgorithm = { name: "RSA-OAEP", hash: { name: "SHA-256" } };
+  if (format === "raw") {
+    algorithm = { name: "AES-GCM", length: 256 }; // Para claves simétricas
+  }
   // Importamos la clave pública en formato SPKI
   return crypto.subtle.importKey(
-    "spki",
+    format,
     arrayBuffer,
-    {
-      name: "RSA-OAEP",
-      hash: { name: "SHA-256" }
-    },
-    false,
+    algorithm,
+    true,
     ["encrypt"]
   );
 }
@@ -129,25 +135,32 @@ export async function decryptWithSymmetricKey(symmetricKey: CryptoKey, data: str
   return decoder.decode(decryptedData);
 }
 
-export async function storeSymmetricKey(symmetricKey: CryptoKey): Promise<void> {
-  const symmetricKeyBuffer: ArrayBuffer = await crypto.subtle.exportKey("raw", symmetricKey);
-  const base64Key: string = btoa(String.fromCharCode(...new Uint8Array(symmetricKeyBuffer)));
-  localStorage.setItem('symmetricKey', base64Key);
+export async function storeKey(key: CryptoKey, name: string, formatStr: string): Promise<void> {
+  const format: "spki" | "pkcs8" | "raw" = formatStr as "spki" | "pkcs8" | "raw";
+  const keyBuffer: ArrayBuffer = await crypto.subtle.exportKey(format, key);
+  const base64Key: string = btoa(String.fromCharCode(...new Uint8Array(keyBuffer)));
+  localStorage.setItem(name, base64Key);
 }
 
-export async function retrieveSymmetricKey(): Promise<CryptoKey> {
-  const base64Key: string = localStorage.getItem('symmetricKey');
+export async function retrieveKey(name: string, formatStr: string): Promise<CryptoKey> {
+  const base64Key: string = localStorage.getItem(name);
   const binaryStr: string = atob(base64Key);
   const keyData: Uint8Array = new Uint8Array(binaryStr.length);
   for (let i = 0; i < binaryStr.length; i++) {
     keyData[i] = binaryStr.charCodeAt(i);
   }
+  const format: "spki" | "pkcs8" | "raw" = formatStr as "spki" | "pkcs8" | "raw";
+  // spki is for public keys, raw is for symmetric keys
+  let algorithm: RsaHashedImportParams | AesKeyAlgorithm = { name: "RSA-OAEP", hash: { name: "SHA-256" } };
+  if (format === "raw") {
+    algorithm = { name: "AES-GCM", length: 256 }; // Para claves simétricas
+  }
+
   return crypto.subtle.importKey(
-    "raw",
-    keyData,
-    { name: "AES-GCM", length: 256 },
+    format,
+    keyData.buffer,
+    algorithm,
     true,
-    ["encrypt", "decrypt"]
+    format === "spki" ? ["encrypt"] : ["encrypt", "decrypt"]
   );
 }
-
