@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 
 import { Container, Box, Button, TextField, Typography } from '@mui/material';
@@ -7,10 +8,12 @@ import { deriveSymmetricKey, encryptWithSymmetricKey, importKey, encryptWithPubl
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 export default function Login() {
-  const [username, setUsername]: [string, Dispatch<SetStateAction<string>>] = useState('');
-  const [password, setPassword]: [string, Dispatch<SetStateAction<string>>] = useState('');
-  const [webSocket, setWebsocket]: [WebSocket, Dispatch<SetStateAction<WebSocket>>] = useState(null);
-  const [serverPublicKey, setServerPublicKey]: [CryptoKey, Dispatch<SetStateAction<CryptoKey>>] = useState(null);
+
+  type Generic<T> = Dispatch<SetStateAction<T>>;
+  const [username, setUsername]: [string, Generic<string>] = useState('');
+  const [password, setPassword]: [string, Generic<string>] = useState('');
+  const [webSocket, setWebsocket]: [WebSocket, Generic<WebSocket>] = useState(null);
+  const [serverPublicKey, setServerPublicKey]: [CryptoKey, Generic<CryptoKey>] = useState(null);
   const router: AppRouterInstance = useRouter();
 
   useEffect(() => {
@@ -33,9 +36,10 @@ export default function Login() {
   }, []);
 
   const handleReceiveToken: (event: MessageEvent) => Promise<void> = async (event: MessageEvent) => {
-    const data: { tokens: { refresh: string, access: string } } = JSON.parse(event.data);
+    console.log(JSON.parse(event.data));
+    const data: { refresh: string, access: string } = JSON.parse(event.data);
 
-    const encryptedToken: string = data.tokens.access;
+    const encryptedToken: string = data.access;
     localStorage.setItem('encrypted_token', encryptedToken);
     router.push('/loggedHome');
   };

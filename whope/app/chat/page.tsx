@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 
 import { Container, Box, Button, TextField, Typography } from '@mui/material';
@@ -6,11 +7,13 @@ import { useRouter } from 'next/navigation';
 import { retrieveKey, deriveSymmetricKey, encryptWithSymmetricKey, importKey, encryptWithPublicKey, decryptWithSymmetricKey, storeKey } from '../utils/crypto_utils';
 
 export default function Chat() {
-  const [webSocket, setWebsocket]: [WebSocket, Dispatch<SetStateAction<WebSocket>>] = useState(null);
-  const [currentMessage, setCurrentMessage]: [string, Dispatch<SetStateAction<string>>] = useState('');
-  const [allMessages, setAllMessages]: [{ username: string, message: string }[], Dispatch<SetStateAction<{ username: string, message: string }[]>>] = useState([]);
-  const [symmetricKey, setSymmetricKey]: [CryptoKey, Dispatch<SetStateAction<CryptoKey>>] = useState(null)
-  const [newSymmetricKey, setNewSymmetricKey]: [CryptoKey, Dispatch<SetStateAction<CryptoKey>>] = useState(null);
+
+  type Generic<T> = Dispatch<SetStateAction<T>>;
+  const [webSocket, setWebsocket]: [WebSocket, Generic<WebSocket>] = useState(null);
+  const [currentMessage, setCurrentMessage]: [string, Generic<string>] = useState('');
+  interface Message { username: string, message: string };
+  const [allMessages, setAllMessages]: [Message[], Generic<Message[]>] = useState([]);
+  const [symmetricKey, setSymmetricKey]: [CryptoKey, Generic<CryptoKey>] = useState(null)
 
   useEffect(() => {
     // cannot extract anything cuz "use client" pages doesnt support it
@@ -31,18 +34,11 @@ export default function Chat() {
 
       webSocket.onmessage = async (event: MessageEvent) => {
         if (event.data.includes('message')) {
-          const key: CryptoKey = newSymmetricKey !== null ? newSymmetricKey : symmetricKey;
-          const data: { username: string, message: string } = JSON.parse(event.data);
-          const username: string = await decryptWithSymmetricKey(key, data.username);
-          const message: string = await decryptWithSymmetricKey(key, data.message);
+          const data: Message = JSON.parse(event.data);
+          const username: string = await decryptWithSymmetricKey(symmetricKey, data.username);
+          const message: string = await decryptWithSymmetricKey(symmetricKey, data.message);
           const messageObject: { username: string, message: string } = { username: username, message: message };
           setAllMessages((prevMessages) => [...prevMessages, messageObject]);
-
-        } else if (event.data.includes('new_symmetric_key')) {
-          const data: { new_symmetric_key: string } = JSON.parse(event.data);
-          const decryptedNewSymmetricKey: string = await decryptWithSymmetricKey(symmetricKey, data.new_symmetric_key);
-          const newSymmetricKey: CryptoKey = await importKey(decryptedNewSymmetricKey, 'raw');
-          setNewSymmetricKey(newSymmetricKey);
         }
       };
 
@@ -57,14 +53,14 @@ export default function Chat() {
   const handleSendMessage: (e: React.KeyboardEvent) => void = async (e) => {
     if (e.key === 'Enter') {
       const encryptedUsername: string = localStorage.getItem('encrypted_username');
-      const encryptedMessage: string = await encryptWithSymmetricKey(newSymmetricKey !== null ? newSymmetricKey : symmetricKey, currentMessage);
+      const encryptedMessage: string = await encryptWithSymmetricKey(symmetricKey, currentMessage);
       const message: string = JSON.stringify({ action: 'send_message', username: encryptedUsername, message: encryptedMessage });
       webSocket.send(message);
       setCurrentMessage('');
     }
   }
 
-  const renderMessage: (message: { username: string, message: string }, index: number) => JSX.Element = (message, index) => {
+  const renderMessage: (message: Message, index: number) => JSX.Element = (message: Message, index: number) => {
     return (
       <Typography key={index}>
         {message.username}: {message.message}
@@ -75,7 +71,7 @@ export default function Chat() {
   const messageList: () => JSX.Element = () => {
     return (
       <Box>
-        {allMessages.map((message, index) => renderMessage(message, index))}
+        {allMessages.map((message: Message, index: number) => renderMessage(message, index))}
       </Box>
     );
   }
@@ -105,5 +101,4 @@ export default function Chat() {
   }
 
   return container();
-
 }

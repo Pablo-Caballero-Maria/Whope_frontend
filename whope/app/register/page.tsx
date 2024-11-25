@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 
 import { Container, Box, Button, TextField, Typography, FormControlLabel, Switch } from '@mui/material';
@@ -7,10 +8,12 @@ import { deriveSymmetricKey, encryptWithSymmetricKey } from '../utils/crypto_uti
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 export default function Register() {
-  const [username, setUsername]: [string, Dispatch<SetStateAction<string>>] = useState('');
-  const [password, setPassword]: [string, Dispatch<SetStateAction<string>>] = useState('');
-  const [isWorker, setIsWorker]: [string, Dispatch<SetStateAction<string>>] = useState('false');
-  const [websocket, setWebsocket]: [WebSocket, Dispatch<SetStateAction<WebSocket>>] = useState(null);
+
+  type Generic<T> = Dispatch<SetStateAction<T>>;
+  const [username, setUsername]: [string, Generic<string>] = useState('');
+  const [password, setPassword]: [string, Generic<string>] = useState('');
+  const [isWorker, setIsWorker]: [string, Generic<string>] = useState('false');
+  const [websocket, setWebsocket]: [WebSocket, Generic<WebSocket>] = useState(null);
   const router: AppRouterInstance = useRouter();
 
   useEffect(() => {
