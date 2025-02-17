@@ -1,10 +1,9 @@
-// @ts-nocheck
 "use client";
 
 import { Container, Box, Button, TextField, Typography } from '@mui/material';
 import { useState, useEffect, SetStateAction, Dispatch } from 'react';
 import { useRouter } from 'next/navigation';
-import { deriveSymmetricKey, encryptWithSymmetricKey, importKey, encryptWithPublicKey, decryptWithSymmetricKey, storeKey } from '../utils/crypto_utils';
+import { deriveSymmetricKey, encryptWithSymmetricKey, importKey, encryptWithPublicKey, storeKey } from '../utils/crypto_utils';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 export default function Login() {

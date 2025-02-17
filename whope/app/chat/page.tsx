@@ -1,10 +1,8 @@
-// @ts-nocheck
 "use client";
 
-import { Container, Box, Button, TextField, Typography } from '@mui/material';
-import { useState, useEffect, SetStateAction, Dispatch, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { retrieveKey, deriveSymmetricKey, encryptWithSymmetricKey, importKey, encryptWithPublicKey, decryptWithSymmetricKey, storeKey } from '../utils/crypto_utils';
+import { Container, Box, TextField, Typography } from '@mui/material';
+import { useState, useEffect, SetStateAction, Dispatch } from 'react';
+import { retrieveKey, encryptWithSymmetricKey, encryptWithPublicKey, decryptWithSymmetricKey } from '../utils/crypto_utils';
 
 export default function Chat() {
 
@@ -12,7 +10,13 @@ export default function Chat() {
   const [webSocket, setWebsocket]: [WebSocket, Generic<WebSocket>] = useState(null);
   const [currentMessage, setCurrentMessage]: [string, Generic<string>] = useState('');
   interface Message { username: string, message: string };
-  const [allMessages, setAllMessages]: [Message[], Generic<Message[]>] = useState([]);
+  // Initialize with 100 mock messages
+  const [allMessages, setAllMessages]: [Message[], Generic<Message[]>] = useState(() =>
+    Array.from({ length: 100 }, (_, i) => ({
+      username: `User ${i + 1}`,
+      message: `This is mock message ${i + 1}`
+    }))
+  );
   const [symmetricKey, setSymmetricKey]: [CryptoKey, Generic<CryptoKey>] = useState(null)
 
   useEffect(() => {
@@ -78,8 +82,9 @@ export default function Chat() {
 
   const inputBox: () => JSX.Element = () => {
     return (
-      <Box>
+      <Box sx={{ width: '50%' }}>
         <TextField
+          fullWidth
           id="outlined-basic"
           label="Message"
           variant="outlined"
@@ -91,14 +96,43 @@ export default function Chat() {
     );
   }
 
+  const mainBox: () => JSX.Element = () => {
+    return (
+      <>
+        <Box
+          sx={{
+            flexGrow: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-start",
+            alignItems: "center",
+            overflowY: "auto"
+          }}
+        >
+          {messageList()}
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+          {inputBox()}
+        </Box>
+      </>
+    );
+  };
+
   const container: () => JSX.Element = () => {
     return (
       <Container>
-        {messageList()}
-        {inputBox()}
+        <Box
+          sx={{
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          {mainBox()}
+        </Box>
       </Container>
     );
   }
-
+  
   return container();
 }

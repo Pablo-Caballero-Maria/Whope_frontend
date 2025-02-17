@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { Container, Box, Button, TextField, Typography, FormControlLabel, Switch } from '@mui/material';
