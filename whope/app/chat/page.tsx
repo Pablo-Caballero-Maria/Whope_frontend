@@ -1,6 +1,7 @@
 "use client";
 
-import { Container, Box, TextField, Typography } from '@mui/material';
+import { Container, Box, TextField, Typography, IconButton, InputAdornment } from '@mui/material';
+import SendIcon from '@mui/icons-material/Send';
 import { useState, useEffect, SetStateAction, Dispatch } from 'react';
 import { retrieveKey, encryptWithSymmetricKey, encryptWithPublicKey, decryptWithSymmetricKey } from '../utils/crypto_utils';
 
@@ -10,13 +11,9 @@ export default function Chat() {
   const [webSocket, setWebsocket]: [WebSocket, Generic<WebSocket>] = useState(null);
   const [currentMessage, setCurrentMessage]: [string, Generic<string>] = useState('');
   interface Message { username: string, message: string };
-  // Initialize with 100 mock messages
-  const [allMessages, setAllMessages]: [Message[], Generic<Message[]>] = useState(() =>
-    Array.from({ length: 100 }, (_, i) => ({
-      username: `User ${i + 1}`,
-      message: `This is mock message ${i + 1}`
-    }))
-  );
+
+  const [allMessages, setAllMessages] = useState([]);
+
   const [symmetricKey, setSymmetricKey]: [CryptoKey, Generic<CryptoKey>] = useState(null)
 
   useEffect(() => {
@@ -66,8 +63,11 @@ export default function Chat() {
 
   const renderMessage: (message: Message, index: number) => JSX.Element = (message: Message, index: number) => {
     return (
-      <Typography key={index}>
-        {message.username}: {message.message}
+      <Typography key={index} sx={{ marginBottom: 2 }}>
+        <span style={{ color: message.username === "bot" ? "blue" : "inherit" }}>
+          {message.username}
+        </span>
+        : {message.message}
       </Typography>
     );
   }
@@ -87,10 +87,20 @@ export default function Chat() {
           fullWidth
           id="outlined-basic"
           label="Message"
+          placeholder="Type your message here..."
           variant="outlined"
           value={currentMessage}
           onChange={(e => setCurrentMessage(e.target.value))}
           onKeyDown={(e) => { handleSendMessage(e) }}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={() => handleSendMessage()}>
+                  <SendIcon />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
         />
       </Box>
     );
@@ -133,6 +143,6 @@ export default function Chat() {
       </Container>
     );
   }
-  
+
   return container();
 }
